@@ -28,6 +28,7 @@
       <div
         class="message"
         v-for="(msg, index) in messages"
+        :key="index"
       >
         <h3>{{ msg.user }}</h3>
         <p> {{ msg.text }} </p>
