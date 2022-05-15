@@ -28,14 +28,14 @@ html,
 body,
 #__next {
   height: 100vh;
-  width: 100vw;
+  width: 100%;
   overflow-x: hidden;
 }
 
 /* Grid */
 
 .container {
-  width: 90%;
+  width: 100%;
   margin-left: auto;
   margin-right: auto;
 }
@@ -110,7 +110,7 @@ body,
 @media only screen and (min-width: 33.75em) {
   /* 540px */
   .container {
-    width: 80%;
+    width: 100%;
   }
 }
 
@@ -160,8 +160,8 @@ body,
 @media only screen and (min-width: 60em) {
   /* 960px */
   .container {
-    width: 75%;
-    max-width: 60rem;
+    width: 100%;
+    max-width: 100%;
   }
 }
 
@@ -349,6 +349,8 @@ button.primary,
   display: flex;
   flex-direction: column;
   gap: 20px;
+  padding-left: 25rem;
+  max-width: 100rem;
 }
 
 .form-widget > .button {

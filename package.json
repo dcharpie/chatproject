@@ -10,7 +10,8 @@
     "@supabase/supabase-js": "^1.35.3",
     "moment": "^2.29.3",
     "nats.ws": "^1.7.2",
-    "vue": "^3.2.33"
+    "vue": "^3.2.33",
+    "vue-router": "^4.0.15"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^2.3.1",

@@ -1,8 +1,9 @@
 <template>
   <form class="form-widget" @submit.prevent="updateProfile">
     <div>
+      <img class="avtr" :src="avatar_url" />
       <label for="email">Email</label>
-      <input id="email" type="text" :value="store.user.email" disabled />
+      <input id="email" type="text" :value="store.email" disabled />
     </div>
     <div>
       <label for="username">Name</label>
@@ -11,6 +12,10 @@
     <div>
       <label for="website">Website</label>
       <input id="website" type="website" v-model="website" />
+    </div>
+    <div>
+      <label for="avatar">Avatar URL</label>
+      <input id="avatar" type="text" v-model="avatar_url" />
     </div>
 
     <div>
@@ -31,82 +36,94 @@
 </template>
 
 <script>
-import { supabase } from "../supabase"
-import { store } from "../Store"
-import { onMounted, ref } from "vue"
+import { supabase } from "../supabase";
+import { store } from "../Store";
+import { onMounted, ref } from "vue";
 
 export default {
   setup() {
-    const loading = ref(true)
-    const username = ref("")
-    const website = ref("")
-    const avatar_url = ref("")
+    const loading = ref(true);
+    const username = ref("");
+    const website = ref("");
+    const avatar_url = ref("");
+    const id = ref("");
+    const channels = ref([]);
 
     async function getProfile() {
       try {
-        loading.value = true
-        store.user = supabase.auth.user()
+        loading.value = true;
 
         let { data, error, status } = await supabase
           .from("profiles")
-          .select(`username, website, avatar_url`)
-          .eq("id", store.user.id)
-          .single()
+          .select(`username, website, avatar_url, channels, id`)
+          .eq("id", store.userId)
+          .single();
 
-        if (error && status !== 406) throw error
+        if (error && status !== 406) throw error;
 
         if (data) {
-          username.value = data.username
-          website.value = data.website
-          avatar_url.value = data.avatar_url
+          username.value = data.username;
+          website.value = data.website;
+          avatar_url.value = data.avatar_url;
+          channels.value = data.channels;
+          id.value = data.id;
         }
       } catch (error) {
-        alert(error.message)
+        alert(error.message);
       } finally {
-        loading.value = false
+        loading.value = false;
       }
     }
 
     async function updateProfile() {
       try {
-        loading.value = true
-        store.user = supabase.auth.user()
+        loading.value = true;
+        //const user = await supabase.auth.user();
+        //store.setUser(user);
 
         const updates = {
-          id: store.user.id,
+          id: store.userId,
           username: username.value,
           website: website.value,
           avatar_url: avatar_url.value,
           updated_at: new Date(),
+          channels: channels.value,
+        };
+        console.log(updates);
+
+        let { data, error } = await supabase.from("profiles").upsert(updates, {
+          returning: "representation", // Don't return the value after inserting
+        });
+        console.log(data);
+        if (error) throw error;
+        //store.setUser(data[0]);
+        if (data) {
+          store.setUserName(data[0].username);
+          store.setUserAvatarUrl(data[0].avatar_url);
         }
-
-        let { error } = await supabase.from("profiles").upsert(updates, {
-          returning: "minimal", // Don't return the value after inserting
-        })
-
-        if (error) throw error
+        console.log(store.avatar_url);
       } catch (error) {
-        alert(error.message)
+        console.log(error);
       } finally {
-        loading.value = false
+        loading.value = false;
       }
     }
 
     async function signOut() {
       try {
-        loading.value = true
-        let { error } = await supabase.auth.signOut()
-        if (error) throw error
+        loading.value = true;
+        let { error } = await supabase.auth.signOut();
+        if (error) throw error;
       } catch (error) {
-        alert(error.message)
+        alert(error.message);
       } finally {
-        loading.value = false
+        loading.value = false;
       }
     }
 
     onMounted(() => {
-      getProfile()
-    })
+      getProfile();
+    });
 
     return {
       store,
@@ -114,10 +131,20 @@ export default {
       username,
       website,
       avatar_url,
+      channels,
+      id,
 
       updateProfile,
       signOut,
-    }
+    };
   },
-}
+};
 </script>
+
+<style scoped>
+.avtr {
+  padding-left: 20rem;
+  height: 20rem;
+  width: 40rem;
+}
+</style>

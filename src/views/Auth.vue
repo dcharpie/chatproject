@@ -1,8 +1,8 @@
 <template>
-  <form class="row flex flex-center" @submit.prevent="handleLogin">
-    <div class="col-6 form-widget">
-      <h1 class="header">Supabase + Vue 3</h1>
-      <p class="description">Sign in via magic link with your email below</p>
+  <form class="" @submit.prevent="handleLogin">
+    <div class="main">
+      <h1 class="header-invt">Daniel's Chat App</h1>
+      <p class="description-invt">Sign in via magic link with your email below</p>
       <div>
         <input
           class="inputField"
@@ -14,7 +14,7 @@
       <div>
         <input
           type="submit"
-          class="button block"
+          class="buttonBlock"
           :value="loading ? 'Loading' : 'Send magic link'"
           :disabled="loading"
         />
@@ -53,3 +53,28 @@ export default {
   },
 }
 </script>
+
+<style>
+
+.main {
+  width: 30rem;
+  margin: auto;
+}
+
+.header-invt {
+  margin-left: 7rem;
+}
+
+.description-invt {
+  margin-left: 5rem;
+}
+
+.inputField {
+  text-align: center;
+}
+
+.buttonBlock {
+  margin-top: 2px;
+}
+
+</style>

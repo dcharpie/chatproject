@@ -1,14 +1,45 @@
 <template>
   <div class="body">
-    <div class="container">
-      <div class="chats"></div>
+    <div v-if="channel">
+      <div class="stfs">
+        <div class="chats"></div>
+        <h1 class="lbl">{{ channel }}</h1>
+        <h2 class="lbl">
+          Your Status is {{ natsConnected ? "Online" : "Offline" }}
+        </h2>
+      </div>
+      <div class="container1"></div>
+      <div class="box">
+        <div class="chts" v-for="(msg, index) in messages" :key="index">
+          <div class="msg-bbl">
+            <div class="usr">
+              <span class="usr-m"> {{ msg.user }}: </span>
+            </div>
+            <div>
+              <span class="txt-m"> {{ msg.text }} </span>
+            </div>
+            <div class="tme">
+              <span class="tme-m"> {{ msg.time }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="box">
+        <input
+          type="text"
+          v-model="messageText"
+          placeholder="Type a message"
+          @keydown="handleInputKeyDown"
+          class="text-input"
+        />
+
+        <button @click="sendMessage" type="button" class="send-btn">
+          Send
+        </button>
+      </div>
     </div>
-    <h1 class="head">Welcome To The Chat!</h1>
-    <h2 class="lbl">
-      Your Status is {{ natsConnected ? "Online" : "Offline" }}
-    </h2>
-    <div class="box">
-      <p class="instruct">Select a channel to get started chatting!</p>
+    <div v-else>
+      <profile />
     </div>
   </div>
 </template>
@@ -17,11 +48,28 @@
 import { connect, JSONCodec } from "nats.ws";
 import moment from "moment";
 import { store } from "../Store";
+import profile from "./Profile.vue";
 
 const jc = JSONCodec();
 
 export default {
   name: "NatsDemo",
+
+  components: {
+    profile,
+  },
+  computed: {
+    channel() {
+      return store.currentChannel;
+    },
+  },
+  watch: {
+    channel() {
+      this.nc.unsubscribe;
+      this.messages = [];
+      this.nc.subscribe(store.currentChannel, { callback: this.addMessage });
+    },
+  },
   data() {
     return {
       natsConnected: false,
@@ -29,6 +77,7 @@ export default {
       messages: [],
       messageText: "",
       messageUser: "",
+      currentChannel: "",
     };
   },
   created() {
@@ -40,7 +89,6 @@ export default {
       .then((nc) => {
         this.natsConnected = true;
         this.nc = nc;
-        this.nc.subscribe("chatChannel", { callback: this.addMessage });
       })
       .catch((err) => {
         console.log(err);
@@ -53,16 +101,16 @@ export default {
     //add a received chat message to the dom
     addMessage(err, message) {
       const msgDecoded = jc.decode(message.data);
-      msgDecoded.time = moment().format("YYYY-MM-DD HH:mm:ss");
+      msgDecoded.time = moment().format("MM-DD HH:mm:ss");
       this.messages = [...this.messages, msgDecoded];
     },
 
     //send chat message through nats
     //reset the input
-    sendMessage() {
-      console.log("sending messager");
+    sendMessage(err, channel) {
+      console.log("sending messager", store.currentChannel);
       this.nc.publish(
-        "chatChannel",
+        store.currentChannel,
         jc.encode({ text: this.messageText, user: store.userName })
       );
       this.messageText = "";
@@ -73,6 +121,10 @@ export default {
       if (e.key === "Enter") {
         this.sendMessage();
       }
+    },
+
+    addCurrentChannel() {
+      const Channel = store.currentChannel;
     },
   },
 };
@@ -103,14 +155,8 @@ export default {
   width: 50rem;
 }
 
-.textInput {
-  border-radius: 2rem;
-  height: 2.5rem;
-  width: 45rem;
-  background-color: #161b22;
-  border: 1px solid white;
+.text-input {
   text-align: center;
-  font-size: 2rem;
 }
 
 body {
@@ -132,13 +178,12 @@ textarea {
   color: white;
   text-align: center;
   padding-top: 1rem;
-  padding-left: 30rem;
-  font-size: 4rem;
+  padding-right: 10rem;
 }
 
 .lbl {
   text-align: center;
-  padding-left: 40rem;
+  padding-right: 20rem;
 }
 
 .send-button {
@@ -155,12 +200,13 @@ textarea {
 
 .box {
   text-align: center;
-  width: 50rem;
-  max-height: 50rem;
+  max-width: 45rem;
+  max-height: 15rem;
   margin: auto;
   overflow: auto;
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: none;
   padding-left: 10rem;
+  padding-top: 0.5rem;
 }
 
 .cbox {
@@ -171,7 +217,6 @@ textarea {
 
 .chats {
   max-width: 100%;
-  margin: auto;
 }
 .new-button {
   background-color: #f92120;
@@ -191,34 +236,53 @@ textarea {
 }
 
 .usr {
-  position: relative;
-  flex: inline;
-  font-size: 1.5rem;
-  padding-right: 33rem;
+  font-size: 1rem;
   color: #30363d;
+  display: inline-flexbox;
 }
 
 .txt {
-  font-size: 2.5rem;
+  font-size: 1.5rem;
+  padding-right: 20rem;
   color: #30363d;
 }
 
 .tme {
-  position: relative;
-  flex: inline;
-  padding-left: 30rem;
-  color: #30363d;
+  color: white;
+  font-size: 0.5rem;
+  display: inline-block;
 }
 
 .chts {
-  border: 2px solid white;
+  border: 1px solid white;
   background-color: var(--custom-color-brand);
+  margin: 3px;
+  border-radius: 5px;
 }
 
-.instruct {
+.msg-bbl {
+  max-height: 7rem;
+}
+
+.send-btn {
+  margin-top: 0.5rem;
+}
+
+.stfs {
+  padding-left: 29rem;
+}
+
+.usr-m {
+  color: #30363d;
   font-weight: bold;
-  text-align: center;
-  font-size: 2rem;
-  padding-left: 10rem;
+}
+
+.txt-m {
+  color: #30363d;
+  font-weight: bold;
+}
+
+.tme-m {
+  color: #30363d;
 }
 </style>
