@@ -21,7 +21,7 @@
         </div>
         <h1 class="lab-channels">Channels</h1>
         <ul>
-          <li v-for="currentChannel in channels" :key="currentChannel">
+          <li v-for="currentChannel in channelNames" :key="currentChannel">
             <button @click="getChannel(currentChannel)" class="avail-channels">
               {{ currentChannel }}
             </button>
@@ -40,28 +40,27 @@ import { supabase } from "../supabase";
 export default {
   setup() {
     const loading = ref(true);
-    const avatar_url = ref("");
-    const chatChannels = ref([]);
+    const channelNames = ref([]);
     const newTopic = ref("");
-    const channels = ref("");
+    const avatar_url = ref("");
 
-    async function getAvtr() {
+    async function getChats() {
       try {
         loading.value = true;
         //const user = await supabase.auth.user()
         //store.setUser(user)
 
         let { data, error, status } = await supabase
-          .from("profiles")
+          .from('profiles')
           .select(`avatar_url, channels`)
           .eq("id", store.userId)
-          .single();
+          .single()
 
         if (error && status !== 406) throw error;
 
         if (data) {
           avatar_url.value = data.avatar_url;
-          channels.value = data.channels;
+          channelNames.value = data.channels;
         }
       } catch (error) {
         alert(error.message);
@@ -75,15 +74,15 @@ export default {
     };
 
     const createChannel = async () => {
-      channels.value = [...channels.value, newTopic.value];
+      channelNames.value = [...channelNames.value, newTopic.value];
     };
-    getAvtr();
+    getChats();
     return {
       createChannel,
       getChannel,
       newTopic,
+      channelNames,
       avatar_url,
-      channels,
     };
   },
 };
@@ -145,8 +144,7 @@ export default {
   width: 5rem;
   border-radius: 10px;
   float: right;
-  position: absolute;
-  left: 96rem;
+  left: 115rem;
   top: 0rem;
 }
 

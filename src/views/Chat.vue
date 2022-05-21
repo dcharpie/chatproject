@@ -49,6 +49,7 @@ import { connect, JSONCodec } from "nats.ws";
 import moment from "moment";
 import { store } from "../Store";
 import profile from "./Profile.vue";
+import { ref } from 'vue';
 
 const jc = JSONCodec();
 

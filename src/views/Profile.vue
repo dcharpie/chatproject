@@ -6,8 +6,8 @@
       <input id="email" type="text" :value="store.email" disabled />
     </div>
     <div>
-      <label for="username">Name</label>
-      <input id="username" type="text" v-model="username" />
+      <label for="userName">Name</label>
+      <input id="userName" type="text" v-model="userName" />
     </div>
     <div>
       <label for="website">Website</label>
@@ -43,11 +43,10 @@ import { onMounted, ref } from "vue";
 export default {
   setup() {
     const loading = ref(true);
-    const username = ref("");
+    const userName = ref("");
     const website = ref("");
     const avatar_url = ref("");
     const id = ref("");
-    const channels = ref([]);
 
     async function getProfile() {
       try {
@@ -55,17 +54,16 @@ export default {
 
         let { data, error, status } = await supabase
           .from("profiles")
-          .select(`username, website, avatar_url, channels, id`)
+          .select(`username, website, avatar_url, id`)
           .eq("id", store.userId)
           .single();
 
         if (error && status !== 406) throw error;
 
         if (data) {
-          username.value = data.username;
+          store.userName = data.username;
           website.value = data.website;
           avatar_url.value = data.avatar_url;
-          channels.value = data.channels;
           id.value = data.id;
         }
       } catch (error) {
@@ -83,11 +81,10 @@ export default {
 
         const updates = {
           id: store.userId,
-          username: username.value,
+          username: userName.value,
           website: website.value,
           avatar_url: avatar_url.value,
           updated_at: new Date(),
-          channels: channels.value,
         };
         console.log(updates);
 
@@ -98,7 +95,7 @@ export default {
         if (error) throw error;
         //store.setUser(data[0]);
         if (data) {
-          store.setUserName(data[0].username);
+          store.setUserName(data[0].userName);
           store.setUserAvatarUrl(data[0].avatar_url);
         }
         console.log(store.avatar_url);
@@ -128,10 +125,9 @@ export default {
     return {
       store,
       loading,
-      username,
+      userName,
       website,
       avatar_url,
-      channels,
       id,
 
       updateProfile,

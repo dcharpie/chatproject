@@ -29,16 +29,24 @@ export default {
       const { email, id } = session.user;
       store.setEmail(email);
       store.setUserId(id);
-      let { data, error, status } = await supabase
-        .from("profiles")
-        .select(`username, website, avatar_url, id, channels[]`)
-        .eq("id", store.userId)
-        .single();
+
+      let { data, error } = await supabase
+        .from('profiles')
+        .select(`
+                username,
+                website,
+                avatar_url,
+                id,
+                channels,
+                )
+              `)
+
       if (data) {
         store.setUserName(data.username);
         store.setUserAvatarUrl(data.avatar_url);
-        store.setChatChannels(data.channels);
+        store.setChannelNames(data.channels);
       }
+
       console.log("this is the store", store);
     });
     return {
