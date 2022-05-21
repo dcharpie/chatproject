@@ -30,21 +30,21 @@ export default {
       store.setEmail(email);
       store.setUserId(id);
 
-      let { data, error } = await supabase
-        .from('profiles')
-        .select(`
-                username,
-                website,
-                avatar_url,
-                id,
-                channels,
-                )
-              `)
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(`username, avatar_url`)
+        .eq("id", id)
+        .single();
 
       if (data) {
         store.setUserName(data.username);
         store.setUserAvatarUrl(data.avatar_url);
-        store.setChannelNames(data.channels);
+      }
+
+      const { data: channels } = await supabase.from("channels");
+      console.log(channels);
+      if (channels) {
+        store.setChannels(channels);
       }
 
       console.log("this is the store", store);

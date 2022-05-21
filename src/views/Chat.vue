@@ -2,24 +2,25 @@
   <div class="body">
     <div v-if="channel">
       <div class="stfs">
-        <div class="chats"></div>
         <h1 class="lbl">{{ channel }}</h1>
         <h2 class="lbl">
           Your Status is {{ natsConnected ? "Online" : "Offline" }}
         </h2>
       </div>
-      <div class="container1"></div>
       <div class="box">
-        <div class="chts" v-for="(msg, index) in messages" :key="index">
+        <div class="chts" v-for="(msg) in messages" :key="msg.id">
+        <div class="img-bbl">
+          <img class="img" :src="msg.profiles.avatar_url" />
+        </div>
           <div class="msg-bbl">
             <div class="usr">
-              <span class="usr-m"> {{ msg.user }}: </span>
+              <span class="usr-m"> {{ msg.profiles.username }}: </span>
             </div>
-            <div>
+            <div class="txt">
               <span class="txt-m"> {{ msg.text }} </span>
             </div>
             <div class="tme">
-              <span class="tme-m"> {{ msg.time }}</span>
+              <span class="tme-m"> {{ msg.created_at }}</span>
             </div>
           </div>
         </div>
@@ -32,10 +33,11 @@
           @keydown="handleInputKeyDown"
           class="text-input"
         />
-
+      <div class="snd-dv">
         <button @click="sendMessage" type="button" class="send-btn">
           Send
         </button>
+      </div>
       </div>
     </div>
     <div v-else>
@@ -46,10 +48,10 @@
 
 <script>
 import { connect, JSONCodec } from "nats.ws";
+import { supabase } from "../supabase";
 import moment from "moment";
 import { store } from "../Store";
 import profile from "./Profile.vue";
-import { ref } from 'vue';
 
 const jc = JSONCodec();
 
@@ -66,12 +68,14 @@ export default {
   },
   watch: {
     channel() {
-      this.nc.unsubscribe;
-      this.messages = [];
-      this.nc.subscribe(store.currentChannel, { callback: this.addMessage });
+
+      if(this.sub) this.sub.unsubscribe();
+      this.getMessages();
+      this.sub = this.nc.subscribe(store.currentChannel, { callback: this.addMessage });
     },
   },
   data() {
+
     return {
       natsConnected: false,
       nc: null,
@@ -79,6 +83,7 @@ export default {
       messageText: "",
       messageUser: "",
       currentChannel: "",
+      sub: null,
     };
   },
   created() {
@@ -102,19 +107,39 @@ export default {
     //add a received chat message to the dom
     addMessage(err, message) {
       const msgDecoded = jc.decode(message.data);
-      msgDecoded.time = moment().format("MM-DD HH:mm:ss");
-      this.messages = [...this.messages, msgDecoded];
+      supabase.from('messages')
+          .select('text, created_at, profiles(username, avatar_url)')
+          .eq('id', msgDecoded.id)
+          .single()
+          .then(({data, error}) => {
+              this.messages = [...this.messages, data];
+          })
+          .catch(err => {
+            console.log(err);
+          })
     },
 
     //send chat message through nats
     //reset the input
     sendMessage(err, channel) {
       console.log("sending messager", store.currentChannel);
-      this.nc.publish(
-        store.currentChannel,
-        jc.encode({ text: this.messageText, user: store.userName })
-      );
-      this.messageText = "";
+      supabase.from('messages')
+          .insert([
+            { channel_id: store.currentChannelId, profile_id: store.userId, text: this.messageText }
+          ])
+          .then(({data}) => {
+            if (data) {
+              this.nc.publish(
+                store.currentChannel,
+                jc.encode(data[0])
+              )
+              this.messageText = "";
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          })
+
     },
 
     //handling a keydown event to submit a message when pressing enter
@@ -127,11 +152,29 @@ export default {
     addCurrentChannel() {
       const Channel = store.currentChannel;
     },
+
+    getMessages() {
+      this.messages = [];
+      supabase.from('messages')
+          .select('text, created_at, profiles(username, avatar_url)')
+          .eq('channel_id', store.currentChannelId)
+          .then(({data, error}) => {
+            console.log(data);
+            if (data) {
+              this.messages = data
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          })
+
+    }
   },
 };
 </script>
 
 <style lang="css">
+
 .name {
   font-size: 1rem;
   text-align: center;
@@ -150,9 +193,7 @@ export default {
 .msg-bubble {
   background-color: #30363d;
   box-shadow: 2rem;
-  display: flexbox;
   border-radius: 2rem;
-  margin: auto;
   width: 50rem;
 }
 
@@ -162,6 +203,7 @@ export default {
 
 body {
   background-color: #161b22;
+  height: 100%;
 }
 
 .container1 {
@@ -175,6 +217,10 @@ textarea {
   color: white;
 }
 
+.snd-dv {
+  float: center;
+}
+
 .head {
   color: white;
   text-align: center;
@@ -184,7 +230,7 @@ textarea {
 
 .lbl {
   text-align: center;
-  padding-right: 20rem;
+  padding-right: 11rem;
 }
 
 .send-button {
@@ -195,19 +241,17 @@ textarea {
   color: #30363d;
   font-weight: bold;
   font-size: 1.5rem;
-  float: right 50px;
   height: 3.5rem;
 }
 
 .box {
   text-align: center;
-  max-width: 45rem;
-  max-height: 15rem;
-  margin: auto;
+  max-width: 75%;
+  margin-left: 22.5rem;
   overflow: auto;
   overscroll-behavior-y: none;
-  padding-left: 10rem;
   padding-top: 0.5rem;
+  height: 100%;
 }
 
 .cbox {
@@ -218,6 +262,7 @@ textarea {
 
 .chats {
   max-width: 100%;
+  min-width: 5rem;
 }
 .new-button {
   background-color: #f92120;
@@ -239,13 +284,14 @@ textarea {
 .usr {
   font-size: 1rem;
   color: #30363d;
-  display: inline-flexbox;
+  padding-bottom: 0.5rem;
 }
 
 .txt {
-  font-size: 1.5rem;
-  padding-right: 20rem;
+  font-size: 1rem;
+  padding-right: 5rem;
   color: #30363d;
+  padding-bottom: 1rem;
 }
 
 .tme {
@@ -257,8 +303,9 @@ textarea {
 .chts {
   border: 1px solid white;
   background-color: var(--custom-color-brand);
-  margin: 3px;
+  margin: 1rem;
   border-radius: 5px;
+  min-height: 5.5rem;
 }
 
 .msg-bbl {
@@ -285,5 +332,17 @@ textarea {
 
 .tme-m {
   color: #30363d;
+}
+
+.img {
+  height: 5rem;
+  width: 5rem;
+  border-radius: 20px;
+  top: 0rem;
+  margin: 0.2rem;
+}
+
+.img-bbl {
+  float: right;
 }
 </style>

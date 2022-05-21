@@ -6,10 +6,11 @@ export const store = reactive({
   userId: "",
   userName: "New User",
   userAvatarUrl: 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460__340.png',
-  channelNames: [],
+  channels: [],
   currentChannel: '',
   group_chats: [],
   support_chats: [],
+  currentChannelId: "",
 
   setEmail(email) {
     this.email = email
@@ -23,16 +24,22 @@ export const store = reactive({
   setUserAvatarUrl(avatar_url) {
     this.userAvatarUrl = avatar_url
   },
-  setChannelNames(channels) {
-    this.channelNames = channels
+  setChannels(channels) {
+    this.channels = channels
   },
   setCurrentChannel(currentChannel) {
     this.currentChannel = currentChannel
   },
   setGroupChats(group_chats){
     this.group_chats = group_chats
-},
+  },
 setSupportChats(support_chats){
   this.support_chats = support_chats
+  },
+addChannel(channel) {
+  this.channels = [...this.channels, channel] 
+},
+setChannelId(channelId) {
+  this.currentChannelId = channelId
 }
 })

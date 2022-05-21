@@ -21,9 +21,9 @@
         </div>
         <h1 class="lab-channels">Channels</h1>
         <ul>
-          <li v-for="currentChannel in channelNames" :key="currentChannel">
+          <li v-for="currentChannel in channels" :key="currentChannel.id">
             <button @click="getChannel(currentChannel)" class="avail-channels">
-              {{ currentChannel }}
+              {{ currentChannel.name }}
             </button>
           </li>
         </ul>
@@ -34,54 +34,41 @@
 
 <script>
 import { store } from "../Store";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { supabase } from "../supabase";
 
 export default {
   setup() {
     const loading = ref(true);
-    const channelNames = ref([]);
     const newTopic = ref("");
-    const avatar_url = ref("");
-
-    async function getChats() {
-      try {
-        loading.value = true;
-        //const user = await supabase.auth.user()
-        //store.setUser(user)
-
-        let { data, error, status } = await supabase
-          .from('profiles')
-          .select(`avatar_url, channels`)
-          .eq("id", store.userId)
-          .single()
-
-        if (error && status !== 406) throw error;
-
-        if (data) {
-          avatar_url.value = data.avatar_url;
-          channelNames.value = data.channels;
-        }
-      } catch (error) {
-        alert(error.message);
-      } finally {
-        loading.value = false;
-      }
-    }
+    const avatar_url = computed(() => {
+      return store.userAvatarUrl;
+    });
+    const channels = computed(() => {
+      return store.channels;
+    });
 
     const getChannel = (currentChannel) => {
-      store.setCurrentChannel(currentChannel);
+      store.setCurrentChannel(currentChannel.name);
+      store.setChannelId(currentChannel.id);
     };
 
     const createChannel = async () => {
-      channelNames.value = [...channelNames.value, newTopic.value];
+      const { data, error } = await supabase
+        .from("channels")
+        .insert([{ name: newTopic.value }]);
+
+      console.log(data);
+      if (data) {
+        store.addChannel(data[0]);
+        newTopic.value = "";
+      }
     };
-    getChats();
     return {
       createChannel,
       getChannel,
       newTopic,
-      channelNames,
+      channels,
       avatar_url,
     };
   },
@@ -93,16 +80,12 @@ export default {
 .top-nav {
   width: 100%;
   background-color: #30363d;
-  height: 5.1rem;
+  height: 5.5rem;
   border-bottom: 1px solid var(--custom-color-brand);
 }
 
 .nav-link {
   float: right;
-  background-color: var(--custom-color-brand);
-  border: 2px solid #161b22;
-  height: 5rem;
-  width: 5rem;
   font-weight: bold;
   border-radius: 10px;
 }
@@ -132,7 +115,7 @@ export default {
 .brand {
   font-weight: bold;
   text-align: center;
-  font-size: 3rem;
+  font-size: 3.5rem;
   padding-top: 0.5rem;
   padding-left: 1rem;
   float: left;
@@ -140,12 +123,13 @@ export default {
 }
 
 .img {
+  float: right;
+  background-color: var(--custom-color-brand);
+  border: 2px solid #161b22;
   height: 5rem;
   width: 5rem;
+  font-weight: bold;
   border-radius: 10px;
-  float: right;
-  left: 115rem;
-  top: 0rem;
 }
 
 .chan-table {
@@ -163,5 +147,6 @@ export default {
 
 .add-btn {
   margin-left: 4.5rem;
+  margin-top: 0.5rem;
 }
 </style>

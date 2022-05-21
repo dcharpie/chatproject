@@ -61,7 +61,7 @@ export default {
         if (error && status !== 406) throw error;
 
         if (data) {
-          store.userName = data.username;
+          userName.value = data.username;
           website.value = data.website;
           avatar_url.value = data.avatar_url;
           id.value = data.id;
@@ -139,6 +139,7 @@ export default {
 
 <style scoped>
 .avtr {
+  margin-left: 10rem;
   padding-left: 20rem;
   height: 20rem;
   width: 40rem;
